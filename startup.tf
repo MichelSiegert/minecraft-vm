@@ -59,8 +59,24 @@ SCRIPT
 
 chmod +x /usr/local/bin/mc-idle-shutdown.sh
 
+cat << 'BACKUP_SCRIPT' > /usr/local/bin/mc-backup.sh
+WORLD_DIR="/opt/mc/world"
+BUCKET_NAME="minecraft-backups"
+BACKUP_FILE="world.zip"
+
+cd "$WORLD_DIR/.."
+zip -r /tmp/$BACKUP_FILE world
+
+gsutil cp /tmp/$BACKUP_FILE gs://$BUCKET_NAME/$BACKUP_FILE
+
+rm /tmp/$BACKUP_FILE
+BACKUP_SCRIPT
+chmod +x /usr/local/bin/mc-backup.sh
+
 cd /opt/mc
 sudo screen -dmS mcserver java -Xmx4G -Xms1G -jar server.jar nogui
+
+(crontab -l 2>/dev/null; echo "0,30 * * * * /usr/local/bin/mc-backup.sh") | crontab -
 
 (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/mc-idle-shutdown.sh") | crontab -
 EOF

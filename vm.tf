@@ -4,8 +4,13 @@ resource "google_compute_address" "minecraft_ip" {
   project = var.project_id
 }
 
-
 resource "google_compute_instance" "minecraft_server" {
+depends_on = [ 
+  google_project_iam_member.minecraft_vm_storage,
+  google_project_iam_member.minecraft_vm_compute,
+  google_service_account.minecraft_vm
+ ]
+
   name         = "minecraft-server"
   machine_type = "n1-standard-1"
   zone         = var.zone
@@ -21,7 +26,6 @@ resource "google_compute_instance" "minecraft_server" {
   
   metadata = {
     enable-oslogin = "false"
-    shutdown-script = data.template_file.shutdown_script.rendered
     }
 
   tags = ["minecraft"]
@@ -31,4 +35,15 @@ resource "google_compute_instance" "minecraft_server" {
           nat_ip = google_compute_address.minecraft_ip.address
     }
   }
+
+    service_account {
+    email  = google_service_account.minecraft_vm.email
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
+}
+
+output "minecraft_server_internal_ip" {
+  description = "The internal IP of the Minecraft server"
+  value       = google_compute_instance.minecraft_server.network_interface[0].network_ip
 }
