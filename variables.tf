@@ -17,3 +17,9 @@ variable "rcon_password" {
   description = "the RCON passoword"
   type        = string
 }
+
+variable "local_world_zip" {
+  description = "Path to a local Minecraft world zip. Leave empty to skip."
+  type        = string
+  default     = ""
+}

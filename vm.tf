@@ -8,7 +8,8 @@ resource "google_compute_instance" "minecraft_server" {
 depends_on = [ 
   google_project_iam_member.minecraft_vm_storage,
   google_project_iam_member.minecraft_vm_compute,
-  google_service_account.minecraft_vm
+  google_service_account.minecraft_vm,
+  google_storage_bucket_object.world_zip
  ]
 
   name         = "minecraft-server"
@@ -43,7 +44,7 @@ depends_on = [
 
 }
 
-output "minecraft_server_internal_ip" {
-  description = "The internal IP of the Minecraft server"
-  value       = google_compute_instance.minecraft_server.network_interface[0].network_ip
+output "minecraft_server_external_ip" {
+  description = "ip of the server"
+  value = google_compute_instance.minecraft_server.network_interface[0].access_config[0].nat_ip
 }
