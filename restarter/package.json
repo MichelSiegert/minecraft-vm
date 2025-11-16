@@ -1,0 +1,18 @@
+{
+  "name": "restarter",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "gcloud functions deploy restartMinecraftVM   --runtime nodejs20   --trigger-http   --allow-unauthenticated --region europe-west3  --memory=512MB"
+  },
+  "dependencies": {
+    "@google-cloud/compute": "^6.4.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
