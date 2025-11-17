@@ -115,32 +115,36 @@ template = <<-EOF
     gsutil -q stat gs://minecraft-backups-myloooooof/world.zip
 
     status=$?
-    if [ $status -eq 0 ]; then
-        echo "World exists"
-        mkdir -p /opt/mc/world
-        gsutil cp gs://minecraft-backups-myloooooof/world.zip /tmp/world.zip
-        echo "download complete now unzipping!"
-        unzip -o /tmp/world.zip -d /opt/mc/world
-        echo "unzip complete now deleting file."
-        subdir=$(find /opt/mc/world -mindepth 1 -maxdepth 1 -type d | head -n 1)
-        if [ -n "$subdir" ]; then
-            mv "$subdir"/* /opt/mc/world/
-            rmdir "$subdir"
-            echo "Flattened world folder"
+    if [ ! -d "/opt/mc/world" ]; then
+        if [ $status -eq 0 ]; then
+            echo "World exists"
+            mkdir -p /opt/mc/world
+            gsutil cp gs://minecraft-backups-myloooooof/world.zip /tmp/world.zip
+            echo "Download complete, now unzipping!"
+            unzip -o /tmp/world.zip -d /opt/mc/world
+            echo "Unzip complete, now deleting file."
+
+            subdir=$(find /opt/mc/world -mindepth 1 -maxdepth 1 -type d | head -n 1)
+            if [ -n "$subdir" ]; then
+                mv "$subdir"/* /opt/mc/world/
+                rmdir "$subdir"
+                echo "Flattened world folder"
+            fi
+
+            rm /tmp/world.zip
+            echo "Delete complete"
+        else
+            echo "World missing"
         fi
-
-        rm /tmp/world.zip
-        echo "delete complete"
     else
-        echo "World missing"
+        echo "/opt/mc/world already exists. Skipping download and unzip."
     fi
-
 
     cd /opt/mc
 
     sudo screen -dmS mcserver java -Xmx4G -Xms1G -jar server.jar nogui
 
-    (crontab -l 2>/dev/null; echo "10,40 * * * * /usr/local/bin/mc-backup.sh") | crontab -
+    (crontab -l 2>/dev/null; echo "0,30 * * * * /usr/local/bin/mc-backup.sh") | crontab -
 
     (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/mc-idle-shutdown.sh") | crontab -
 EOF
