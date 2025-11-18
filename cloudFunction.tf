@@ -11,7 +11,7 @@ resource "null_resource" "deploy_restart_function" {
         --runtime nodejs20 \
         --trigger-http \
         --allow-unauthenticated \
-        --region europe-west3 \
+        --region europe-west1 \
         --memory=512MB \
         --service-account ${google_service_account.minecraft_function.email}
 

@@ -11,4 +11,3 @@ resource "google_storage_bucket_object" "world_zip" {
   bucket = google_storage_bucket.mc_backup.name
   source = var.local_world_zip
 }
-

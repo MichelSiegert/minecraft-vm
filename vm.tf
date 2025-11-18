@@ -1,9 +1,3 @@
-resource "google_compute_address" "minecraft_ip" {
-  name   = "minecraft-server-ip"
-  region = var.region
-  project = var.project_id
-}
-
 resource "google_compute_instance" "minecraft_server" {
 depends_on = [ 
   google_project_iam_member.minecraft_vm_storage,
@@ -32,9 +26,7 @@ depends_on = [
   tags = ["minecraft"]
   network_interface {
     network = "default"
-    access_config {
-          nat_ip = google_compute_address.minecraft_ip.address
-    }
+    access_config {}
   }
 
     service_account {

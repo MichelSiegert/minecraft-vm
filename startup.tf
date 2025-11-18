@@ -12,7 +12,6 @@ template = <<-EOF
     echo "eula=true" > eula.txt
     fi
 
-
     cat > /opt/mc/server.properties <<EOL
     enable-rcon=true
     rcon.port=25575
@@ -30,8 +29,7 @@ template = <<-EOF
         TIMEOUT_FILE="/tmp/mc_last_seen_player"
         IDLE_LIMIT_MIN=5
 
-
-        PLAYERS=$(mcrcon -H 127.0.0.1 -P 25575 -p "$RCON_PASS" "list" | grep -oP '\d+(?= of)')
+        PLAYERS=$(mcrcon -H 127.0.0.1 -P 25575 -p "$RCON_PASS" "list" | grep -oP '\d+(?= of)' | head -n1)
         echo "$(date '+%F %T') - Players online detected: $PLAYERS" >> /tmp/mc-idle-debug.log
 
         if [ "$PLAYERS" -gt 0 ]; then
@@ -39,12 +37,10 @@ template = <<-EOF
             exit 0
         fi
 
-
         if [ ! -f "$TIMEOUT_FILE" ]; then
             date +%s > "$TIMEOUT_FILE"
             exit 0
         fi
-
 
         LAST=$(cat "$TIMEOUT_FILE")
         NOW=$(date +%s)
@@ -52,53 +48,55 @@ template = <<-EOF
 
 
         if [ "$DIFF" -ge "$IDLE_LIMIT_MIN" ]; then
+            /usr/local/bin/mc-backup.sh
             shutdown -h now
         fi
     SCRIPT
-
 
     chmod +x /usr/local/bin/mc-idle-shutdown.sh
 
     cat << 'BACKUP_SCRIPT' > /usr/local/bin/mc-backup.sh
 
-    set -euo pipefail
+        WORLD_DIR="/opt/mc/world"
+        BUCKET_NAME="minecraft-backups-myloooooof"
+        BACKUP_FILE="world.zip"
 
-    LOGFILE="/var/log/mc_backup.log"
-    exec > >(tee -a "$LOGFILE") 2>&1
+        echo "=== Minecraft Backup Script Starting ==="
 
-    WORLD_DIR="/opt/mc/world"
-    BUCKET_NAME="minecraft-backups-myloooooof"
-    BACKUP_FILE="world.zip"
+        if ! command -v zip >/dev/null 2>&1; then
+            echo "zip not found, installing..."
+            apt-get update && apt-get install -y zip
+        fi
 
-    echo "=== Minecraft Backup Script Starting ==="
+        if ! command -v gsutil >/dev/null 2>&1; then
+            echo "gsutil missing — cannot continue!"
+            exit 1
+        fi
 
-    if ! command -v zip >/dev/null 2>&1; then
-        echo "zip not found, installing..."
-        apt-get update && apt-get install -y zip
-    fi
+        if [ ! -d "$WORLD_DIR" ]; then
+            echo "ERROR: World directory $WORLD_DIR does not exist!"
+            exit 1
+        fi
 
-    if ! command -v gsutil >/dev/null 2>&1; then
-        echo "gsutil missing — cannot continue!"
-        exit 1
-    fi
+        echo "Creating ZIP backup..."
 
-    if [ ! -d "$WORLD_DIR" ]; then
-        echo "ERROR: World directory $WORLD_DIR does not exist!"
-        exit 1
-    fi
+        mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-off"
+        mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-all"
 
-    echo "Creating ZIP backup..."
-    cd "$WORLD_DIR/.."
-    zip -r /tmp/$BACKUP_FILE world
+        cd "$WORLD_DIR/.."  
+        sudo zip -FS -r /tmp/$BACKUP_FILE world 
 
-    echo "Uploading to bucket gs://$BUCKET_NAME/$BACKUP_FILE ..."
-    gsutil cp /tmp/$BACKUP_FILE gs://$BUCKET_NAME/$BACKUP_FILE
 
-    echo "Cleaning up temporary file..."
-    rm /tmp/$BACKUP_FILE
+        mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-on"
 
-    echo "Backup complete."
-    echo "========================================"
+        echo "Uploading to bucket gs://$BUCKET_NAME/$BACKUP_FILE ..."
+        gsutil cp /tmp/$BACKUP_FILE gs://$BUCKET_NAME/$BACKUP_FILE
+
+        echo "Cleaning up temporary file..."
+        sudo rm  -f /tmp/$BACKUP_FILE
+
+        echo "Backup complete."
+        echo "========================================"
     BACKUP_SCRIPT
 
     chmod +x /usr/local/bin/mc-backup.sh
@@ -123,14 +121,12 @@ template = <<-EOF
             echo "Download complete, now unzipping!"
             unzip -o /tmp/world.zip -d /opt/mc/world
             echo "Unzip complete, now deleting file."
-
             subdir=$(find /opt/mc/world -mindepth 1 -maxdepth 1 -type d | head -n 1)
             if [ -n "$subdir" ]; then
                 mv "$subdir"/* /opt/mc/world/
                 rmdir "$subdir"
                 echo "Flattened world folder"
             fi
-
             rm /tmp/world.zip
             echo "Delete complete"
         else
@@ -141,12 +137,9 @@ template = <<-EOF
     fi
 
     cd /opt/mc
-
     sudo screen -dmS mcserver java -Xmx4G -Xms1G -jar server.jar nogui
 
-    (crontab -l 2>/dev/null; echo "0,30 * * * * /usr/local/bin/mc-backup.sh") | crontab -
-
-    (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/mc-idle-shutdown.sh") | crontab -
+    crontab -l 2>/dev/null | grep -q mc-idle-shutdown.sh || \
+        (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/mc-idle-shutdown.sh") | crontab -
 EOF
-
 }
