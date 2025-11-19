@@ -11,9 +11,14 @@ const projectId = process.env.GCP_PROJECT_ID;
 
 app.get('/', async (req, res) => {
   try {
+
+    if((req.query.user ?? "") == ""){
+      res.setMaxListeners(400).send("request misses params!");
+      return;
+    }
+    
     const client = new InstancesClient();
 
-    // Get current instance info
     const [instance] = await client.get({
       project: projectId,
       zone: zoneName,
@@ -26,7 +31,6 @@ app.get('/', async (req, res) => {
     const externalIP = accessConfig?.natIP || 'No external IP assigned';
 
     if (status === 'TERMINATED') {
-      // Start the VM if it's stopped
       await client.start({
         project: projectId,
         zone: zoneName,
@@ -35,7 +39,6 @@ app.get('/', async (req, res) => {
 
       res.status(200).send(`VM ${instanceName} was stopped. Restarting now. Current External IP: ${externalIP}`);
     } else {
-      // VM is already running
       res.status(200).send(`VM ${instanceName} is already running. External IP: ${externalIP}`);
     }
   } catch (err) {

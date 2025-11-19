@@ -52,33 +52,26 @@ template = <<-EOF
             shutdown -h now
         fi
     SCRIPT
-
     chmod +x /usr/local/bin/mc-idle-shutdown.sh
+
 
     cat << 'BACKUP_SCRIPT' > /usr/local/bin/mc-backup.sh
 
         WORLD_DIR="/opt/mc/world"
-        BUCKET_NAME="minecraft-backups-myloooooof"
+        BUCKET_NAME="minecraft-backups-${var.project_id}"
         BACKUP_FILE="world.zip"
 
-        echo "=== Minecraft Backup Script Starting ==="
-
         if ! command -v zip >/dev/null 2>&1; then
-            echo "zip not found, installing..."
             apt-get update && apt-get install -y zip
         fi
 
         if ! command -v gsutil >/dev/null 2>&1; then
-            echo "gsutil missing — cannot continue!"
             exit 1
         fi
 
         if [ ! -d "$WORLD_DIR" ]; then
-            echo "ERROR: World directory $WORLD_DIR does not exist!"
             exit 1
         fi
-
-        echo "Creating ZIP backup..."
 
         mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-off"
         mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-all"
@@ -89,38 +82,24 @@ template = <<-EOF
 
         mcrcon -H 127.0.0.1 -P 25575 -p ${var.rcon_password} "save-on"
 
-        echo "Uploading to bucket gs://$BUCKET_NAME/$BACKUP_FILE ..."
         gsutil cp /tmp/$BACKUP_FILE gs://$BUCKET_NAME/$BACKUP_FILE
 
-        echo "Cleaning up temporary file..."
         sudo rm  -f /tmp/$BACKUP_FILE
-
-        echo "Backup complete."
-        echo "========================================"
     BACKUP_SCRIPT
-
     chmod +x /usr/local/bin/mc-backup.sh
 
 
     WORLD_DIR="/opt/mc/world"
     WORLD_BUCKET="${google_storage_bucket.mc_backup.name}"
     WORLD_FILE="world.zip"
-
-
-    LOGFILE=/var/log/mc_setup.log
-    exec > >(tee -a "$LOGFILE") 2>&1
-
-    gsutil -q stat gs://minecraft-backups-myloooooof/world.zip
-
+    gsutil -q stat gs://minecraft-backups-${var.project_id}/world.zip
     status=$?
+
     if [ ! -d "/opt/mc/world" ]; then
         if [ $status -eq 0 ]; then
-            echo "World exists"
             mkdir -p /opt/mc/world
-            gsutil cp gs://minecraft-backups-myloooooof/world.zip /tmp/world.zip
-            echo "Download complete, now unzipping!"
+            gsutil cp gs://minecraft-backups-${var.project_id}/world.zip /tmp/world.zip
             unzip -o /tmp/world.zip -d /opt/mc/world
-            echo "Unzip complete, now deleting file."
             subdir=$(find /opt/mc/world -mindepth 1 -maxdepth 1 -type d | head -n 1)
             if [ -n "$subdir" ]; then
                 mv "$subdir"/* /opt/mc/world/
@@ -128,12 +107,7 @@ template = <<-EOF
                 echo "Flattened world folder"
             fi
             rm /tmp/world.zip
-            echo "Delete complete"
-        else
-            echo "World missing"
         fi
-    else
-        echo "/opt/mc/world already exists. Skipping download and unzip."
     fi
 
     cd /opt/mc

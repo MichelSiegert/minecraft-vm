@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "mc_backup" {
-  name     = "minecraft-backups-myloooooof"
+  name     = "minecraft-backups-${var.project_id}"
   location = var.region
   force_destroy = true 
 }
