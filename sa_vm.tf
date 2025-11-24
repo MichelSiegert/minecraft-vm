@@ -4,7 +4,6 @@ resource "google_service_account" "minecraft_vm" {
   project      = var.project_id
 }
 
-
 resource "google_project_iam_member" "minecraft_vm_storage" {
   depends_on = [
     google_project_service.cloudresourcemanager,

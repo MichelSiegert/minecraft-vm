@@ -1,10 +1,10 @@
 resource "google_compute_instance" "minecraft_server" {
-depends_on = [ 
-  google_project_iam_member.minecraft_vm_storage,
-  google_project_iam_member.minecraft_vm_compute,
-  google_service_account.minecraft_vm,
-  google_storage_bucket_object.world_zip
- ]
+  depends_on = [
+    google_project_iam_member.minecraft_vm_storage,
+    google_project_iam_member.minecraft_vm_compute,
+    google_service_account.minecraft_vm,
+    google_storage_bucket_object.world_zip
+  ]
 
   name         = "minecraft-server"
   machine_type = "n1-standard-1"
@@ -17,11 +17,11 @@ depends_on = [
   }
   project = var.project_id
 
-  metadata_startup_script = data.template_file.startup_script.rendered
-  
+  metadata_startup_script = local.startup_script
+
   metadata = {
     enable-oslogin = "false"
-    }
+  }
 
   tags = ["minecraft"]
   network_interface {
@@ -29,7 +29,7 @@ depends_on = [
     access_config {}
   }
 
-    service_account {
+  service_account {
     email  = google_service_account.minecraft_vm.email
     scopes = ["https://www.googleapis.com/auth/cloud-platform"]
   }
@@ -38,5 +38,5 @@ depends_on = [
 
 output "minecraft_server_external_ip" {
   description = "ip of the server"
-  value = google_compute_instance.minecraft_server.network_interface[0].access_config[0].nat_ip
+  value       = google_compute_instance.minecraft_server.network_interface[0].access_config[0].nat_ip
 }
