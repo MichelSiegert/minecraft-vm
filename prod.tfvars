@@ -1,0 +1,6 @@
+project_id    = "minecraftneedsloof"
+region        = "europe-west3"
+zone          = "europe-west3-c"
+rcon_password = "JigglesAreBountiful"
+local_world_zip = "./files/world.zip"
+local_sa_keys="./files/keys/tfsa.json"

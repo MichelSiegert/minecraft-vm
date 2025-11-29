@@ -7,7 +7,7 @@ resource "google_compute_instance" "minecraft_server" {
   ]
 
   name         = "minecraft-server"
-  machine_type = "n1-standard-1"
+  machine_type = "e2-medium"
   zone         = var.zone
 
   boot_disk {

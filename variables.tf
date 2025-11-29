@@ -23,3 +23,8 @@ variable "local_world_zip" {
   type        = string
   default     = ""
 }
+
+variable "local_sa_keys" {
+  description = "Path to local sa keys"
+  type        = string
+}

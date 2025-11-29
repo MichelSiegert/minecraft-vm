@@ -1,5 +1,5 @@
 resource "google_compute_firewall" "mc_fw" {
-  name    = "minecraft-fw"
+  name    = "minecraft-fw-${var.project_id}"
   network = "default"
   project = var.project_id
 

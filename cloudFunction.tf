@@ -7,7 +7,7 @@ resource "null_resource" "deploy_restart_function" {
   provisioner "local-exec" {
     command = <<EOT
       cd ./restarter
-      gcloud functions deploy restartMinecraftVM \
+      gcloud functions deploy restartMinecraftVM${var.project_id} \
         --runtime nodejs20 \
         --trigger-http \
         --allow-unauthenticated \

@@ -2,5 +2,5 @@ provider "google" {
   project     = var.project_id
   region      = var.region
   zone        = var.zone
-  credentials = file("./files/keys/tfsa.json")
+  credentials = file(var.local_sa_keys)
 }
