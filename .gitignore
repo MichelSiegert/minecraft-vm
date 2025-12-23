@@ -5,3 +5,4 @@ package-lock.json
 files/
 *.hcl
 .terraform/
+*.tfvars
