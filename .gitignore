@@ -1,8 +1,9 @@
 .env
 node_modules/
 package-lock.json
-*tfstate*
 files/
 *.hcl
-.terraform/
 *.tfvars
+.terraform/
+*.tfstate
+*.tfstate.backup
