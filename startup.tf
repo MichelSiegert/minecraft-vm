@@ -15,7 +15,9 @@ locals {
       project_id    = var.project_id
       rcon_password = var.rcon_password
     }),
-    file("${path.module}/startup/50-run-server.sh")
+    templatefile("${path.module}/startup/50-run-server.sh", {
+      maximum_memory = var.server_task_memory_maximum_GB
+    })
   ]
 
   startup_script = join("\n\n", local.startup_parts)
